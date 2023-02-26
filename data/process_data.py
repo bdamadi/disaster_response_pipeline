@@ -3,6 +3,21 @@ import pandas as pd
 from sqlalchemy.engine import create_engine
 
 def load_data(messages_filepath, categories_filepath):
+    """
+    Load the messages dataset and the categories dataset from the
+    given files and merge them to form the output dataset of the
+    following columns:
+        * original data from messages dataset
+        * the corresponding categories (each per column) from
+        the categories dataset.
+
+    Parameters:
+        messages_filepath (string) path to the messages.csv file
+        categories_filepath (string) path to the categories.csv file
+    Returns:
+        a Pandas data frame of the messages data merged with 
+        corresponding categories
+    """
     # load messages dataset
     messages = pd.read_csv(messages_filepath)
     # load categories dataset
@@ -38,7 +53,17 @@ def load_data(messages_filepath, categories_filepath):
     # concatenate the original dataframe with the new `categories` dataframe
     return pd.concat([df, categories], axis=1)
 
-def clean_data(df):    
+def clean_data(df): 
+    """
+    Clean up the given data frame to:
+        Remove data rows with null message field
+        Remove all duplicated rows
+
+    Parameters:
+        df (pd.DataFrame) input data frame
+    Returns:
+        The cleaned up data frame
+    """   
     # Drop NA messages
     num_rows = df.shape[0]
     df = df.dropna(subset=['message'])
@@ -52,12 +77,29 @@ def clean_data(df):
     return df
 
 def save_data(df, database_filename):
+    """
+    Save the data frame into an SQLite database under 
+    'DisasterResponse' table/
+    
+    Parameters:
+        df (pd.DataFrame) input data frame
+        database_filename (string) path to save the output SQLite database file
+    Returns:
+        None
+    """
     # Save the clean dataset into an sqlite database
     engine = create_engine('sqlite:///' + database_filename)
     df.to_sql('DisasterResponse', engine, index=False, if_exists='replace')
 
 
 def main():
+    """
+    The main function to run this script to process input data files:
+        messages data in CSV file
+        categories data in CSV file
+    Merge messages data and their corresponding categories, clean up,
+    and then save to an SQLite database under DisasterResponse table.
+    """
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]
