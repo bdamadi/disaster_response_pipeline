@@ -15,20 +15,47 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
 
+# Require to download the NLTK's packages.
+# Un-comment these code if there are not downloaded yet.
 # import nltk
 # nltk.download('punkt')
 # nltk.download('wordnet')
 
 def load_data(database_filepath):
+    """
+    Load the DisasterResponse data from the given SQLite database file.
+    Assume that the data are stored in 'DisasterResponse' table.
+
+    Parameters:
+        database_filepath (string) path to the SQLite database file
+    Returns:
+        A tuple of 3 values:
+            A pandas.Series which contains the messages to be categorized
+            A pandas.Dataframe of all categories of the corresponding message
+            A list of category names
+    """
     # load data from database
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql_table('DisasterResponse', engine)
 
+    # Extract the message column
     X = df["message"]
+    # Keep only category columns
     Y = df.drop(["id", "message", "original", "genre"], axis=1)
     return X, Y, Y.columns.values
 
 def tokenize(text):
+    """
+    Tokenize the input text by the following steps:
+        Split the text into words (using NLTK's word_tokenize)
+        Lemmatize each word (using NLTK's WordNetLemmatizer)
+        Normalize into lower case
+
+    Parameters:
+        text (string) input text to be tokenized
+    Returns:
+        List of tokenized words
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -41,6 +68,14 @@ def tokenize(text):
 
 
 def build_model():
+    """
+    Build a pipeline to train a classifier to classify the disaster
+    response messages into multi-categories.
+    The pipeline contains the following steps:
+        Count tokens from each input message
+        Perform TF-IDF transform to the input text
+        Build a MultiOutputClassifier over RandomForestClassifier
+    """
     pipeline = Pipeline([
         ('count', CountVectorizer(tokenizer=tokenize)),
         ('tf-idf', TfidfTransformer()),
@@ -50,6 +85,18 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Evaluate the classifier model using the input test dataset.
+    Print out the classification report.
+
+    Parameters:
+        model: A multi-output classifier
+        X_test: input test messages
+        Y_test: input test categories
+        category_names: list of category names (unused)
+    Returns:
+        None
+    """
     Y_pred = model.predict(X_test)
     # Use np.hstack
     # https://stackoverflow.com/questions/56826216/valueerror-unknown-label-type-for-classification-report
@@ -57,10 +104,28 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """
+    Save the classification model into a Pickle file.
+    Parameters:
+        model: the model to be saved
+        model_filepath: path to save the model as an .pkl file
+    Returns:
+        None
+    """
     pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
+    """
+    The main function to run this script to train a multioutput
+    classifier to classify disaster response message into the
+    predefined categories.
+
+    The input dataset is given as an SQLite database which is
+    produced by the `process_data.py` script.
+
+    Output is the classifier saved as a Pickle file.
+    """
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
