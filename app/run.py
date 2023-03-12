@@ -7,7 +7,7 @@ from nltk.tokenize import word_tokenize
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+from plotly.graph_objs import Bar, Pie
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
@@ -38,14 +38,59 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/index')
 def index():
     
-    # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
+    # Visuals 1: Distribution of Categories
+    # Extract all category columns
+    df_categories = df.drop(['id', 'message', 'original', 'genre'], axis=1)
+    # Count messages in each category
+    category_counts = df_categories.sum()
+    category_names = df_categories.columns.values
+
+    # Visuals 2: Distribution of Top 5 Categories
+    # Sort to find the top 5 categories
+    category_counts_sorted = category_counts.sort_values(ascending=False)
+    top5_categories = category_counts_sorted[:5]
+    # Sum of categories other than top 5
+    top5_categories['others'] = category_counts_sorted[5:].sum()
+    top5_categories_names = list(top5_categories.index)
+
+    # Keep the example plot: Distribution of messages by genres
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
+    # Include 3 visuals
     graphs = [
+        # Distribution of messages by category
+        {
+            'data': [
+                Bar(
+                    x=category_names,
+                    y=category_counts
+                )
+            ],
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
+                }
+            }
+        },
+        # Distribution of Top 5 Categories as a Pie chart
+        {
+            'data': [
+                Pie(
+                    labels=top5_categories_names,
+                    values=top5_categories
+                )
+            ],
+            'layout': {
+                'title': 'Top 5 Categories'
+            }
+        },
+        # Keep the sample code: "Distribution of Message Genres"
         {
             'data': [
                 Bar(
